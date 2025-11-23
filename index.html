@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일요일 전시대 조직 도우미</title>
+    <style>
+        /* 초기 CSS: 모바일 우선 및 기본 레이아웃 */
+        :root {
+            --header-width: 400px;
+            --light-blue-bg: #e3f2fd;
+            --light-blue-border: #bbdefb;
+            --dark-blue-text: #1e88e5;
+        }
+
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f4f4f9;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        header, section {
+            background-color: #ffffff;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: margin-bottom 0.3s ease;
+        }
+
+        h1, h2, h3 {
+            color: #333;
+            margin-top: 0;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h2 { font-size: 1.3em; }
+        h3 { font-size: 1.1em; }
+
+        #accordionToggle {
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        #accordionContent {
+            max-height: 1000px; /* 충분히 큰 값 */
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        }
+
+        #accordionContent.collapsed {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #timeDisplay {
+            padding: 10px;
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #388e3c;
+            text-align: center;
+        }
+
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+        }
+        
+        .tab-button {
+            flex-shrink: 0;
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            margin-right: 5px;
+        }
+
+        .tab-button.active {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .participant-card {
+            position: relative;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: var(--light-blue-bg);
+            border: 1px solid var(--light-blue-border);
+            border-radius: 6px;
+            font-weight: 500;
+            color: var(--dark-blue-text);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box; /* Added for correct width calculation */
+        }
+        .participant-card:hover { background-color: #c6e5ff; }
+        .participant-card .assignment-info {
+            font-size: 0.8em;
+            color: #555;
+            margin-left: 10px;
+        }
+
+        .delete-btn {
+            color: #f44336;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 50%;
+            font-size: 1.2em;
+        }
+        .delete-btn:hover { background-color: rgba(255, 0, 0, 0.1); }
+
+        /* 새로운 배치 그리드 스타일 */
+        .placement-section {
+            margin-top: 20px;
+        }
+
+        .time-slot-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(3, 1fr); /* 시간대 헤더 + 3 팀원 */
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .time-slot-header, .team-member-header {
+            text-align: center;
+            font-weight: bold;
+            color: #555;
+            padding: 5px;
+        }
+
+        .time-slot-label {
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .participant-slot {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 5px;
+            min-height: 50px;
+            background-color: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .participant-slot .participant-card {
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        .unassigned-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #eee;
+        }
+        .unassigned-cards-wrapper { /* New wrapper for unassigned cards */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding-top: 10px; /* Spacing below the title */
+        }
+        .roster-cards-wrapper { /* New wrapper for full roster cards */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding-top: 10px; /* Spacing below the title */
+        }
+
+        /* 참여자 카드 추가 정보 스타일 */
+        .participant-card .assignment-info {
+            font-size: 0.8em;
+            color: #555;
+            margin-left: 10px;
+        }
+
+        /* --- 배치 모드 스타일 --- */
+        .participant-card.selected {
+            background-color: #ffc107; /* 밝은 노란색 */
+            border-color: #ff9800;
+            color: #000;
+        }
+
+        .participant-slot.selected {
+            background-color: #ffc107; /* 밝은 노란색 */
+            border-color: #ff9800;
+            border-style: solid;
+        }
+        /* Adjust participant-card width for multi-column layout in unassigned list */
+        .unassigned-cards-wrapper .participant-card,
+        .roster-cards-wrapper .participant-card { /* Target both wrappers */
+            flex: 1 1 calc(50% - 10px); /* Two columns with gap */
+            max-width: calc(50% - 10px); /* Ensure two columns */
+            margin: 0; /* Remove individual card margins to use gap */
+        }
+
+        .placement-mode-active .participant-slot:not(:has(.participant-card)) {
+            background-color: #c8e6c9; /* 연한 녹색 */
+            border-style: solid;
+            cursor: pointer;
+        }
+        .placement-mode-active .participant-slot:not(:has(.participant-card)):hover {
+            background-color: #a5d6a7;
+        }
+
+        .placement-mode-active .unassigned-section {
+            background-color: #ffcdd2; /* 연한 빨간색 */
+            border: 2px solid #ef9a9a;
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .placement-mode-active .unassigned-cards-wrapper {
+            /* The active styles are now on the parent .unassigned-section */
+            /* We can remove the specific placement-mode styles from here */
+            /* but we'll keep the selector in case we need it later */
+        }
+        .placement-mode-active .unassigned-cards-wrapper:hover {
+            background-color: #ef9a9a;
+        }
+
+
+        /* 태블릿/데스크탑 반응형 레이아웃 */
+        @media (min-width: 768px) {
+            .main-container {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            header {
+                width: var(--header-width);
+                margin-right: 15px;
+                margin-bottom: 0; /* 세로 마진 제거 */
+            }
+            section {
+                flex: 1;
+                min-width: 0; /* flex item이 줄어들 수 있도록 */
+            }
+        }
+
+        /* --- Modal Styles --- */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal.hidden {
+            display: none;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .modal-close-btn {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close-btn:hover,
+        .modal-close-btn:focus {
+            color: black;
+        }
+        .modal-body {
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .modal-footer {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+        .pioneer-item {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .pioneer-item label {
+            cursor: pointer;
+        }
+        .pioneer-item input {
+            margin-right: 10px;
+        }
+        .pioneer-item label.disabled {
+            color: #aaa;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <header>
+        <h1>일요일 전시대 조직 도우미 <span id="accordionToggle">▼</span></h1>
+        
+        <div id="accordionContent">
+            <div class="control-group">
+                <label for="participantName">참여자 이름 입력:</label>
+                <input type="text" id="participantName" placeholder="예: 홍길동">
+                <button id="addParticipantBtn">+ 참여자 추가</button>
+                <button id="showPioneerListBtn" style="background-color: #007BFF; margin-left: 10px;">전도인 목록</button>
+            </div>
+
+
+            <div class="control-group">
+                <label for="totalTeams">총 팀 수:</label>
+                <select id="totalTeams">
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4" selected>4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+            </div>
+            
+            <div id="timeDisplay">팀별 전시 시간: 계산 필요</div>
+
+            <div class="control-group">
+                <label for="newPointName">새 포인트 이름 추가:</label>
+                <input type="text" id="newPointName" placeholder="예: 잠실역 출구">
+                <button id="addPointBtn">+ 포인트 추가</button>
+            </div>
+
+            <div class="control-group" style="margin-top: 20px; border-bottom: none; padding-bottom: 0;">
+                <button id="copyResultsBtn" style="background-color: #2196F3; width: 100%; margin-bottom: 10px;">✅ 텍스트로 보기</button>
+                <button id="clearAllBtn" style="background-color: #f44336; width: 100%;">❌ 모든 데이터 초기화</button>
+            </div>
+        </div>
+    </header>
+
+    <section id="participantArea">
+        <h2>참여자/포인트 선택 및 배치</h2>
+        <div class="tabs" id="pointTabs"></div>
+        <div id="participantList"></div>
+    </section>
+</div>
+
+<!-- Pioneer List Modal -->
+<div id="pioneerModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>전도인 목록</h2>
+            <span class="modal-close-btn">&times;</span>
+        </div>
+        <div style="padding: 10px 0;">
+            <input type="text" id="pioneerSearchInput" placeholder="이름 검색..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        </div>
+        <div class="modal-body" id="pioneerListContainer">
+            <!-- Checkbox list will be rendered here by JS -->
+        </div>
+        <div class="modal-footer">
+            <button id="selectAllPioneersBtn">전체 선택</button>
+            <button id="deselectAllPioneersBtn">전체 해제</button>
+            <button id="addSelectedPioneersBtn" style="background-color: #4CAF50;">닫기</button>
+        </div>
+    </div>
+</div>
+
+<!-- Copy Fallback Modal -->
+<div id="copyFallbackModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>배치 결과</h2>
+            <span class="modal-close-btn">&times;</span>
+        </div>
+        <div class="modal-body">
+            <pre id="copyFallbackText" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+        </div>
+        <div class="modal-footer">
+            <button id="selectAllTextBtn">전체 선택</button>
+        </div>
+    </div>
+</div>
+    
+<script>
+// --- 전역 변수 및 상수 ---
+const TOTAL_TIME_MINUTES = 60;
+let activeTab = '전체 명단';
+let participants = []; // { name: string, assignment: { point: string, timeIndex: int, position: int } | null }
+let points = [];
+let selectedParticipantName = null; // 배치 모드에서 선택된 참여자 이름
+let selectedSlot = null; // 배치 모드에서 선택된 슬롯 { point, timeIndex, position }
+
+const DEFAULT_POINTS = ['가락 한의원', '가락몰', '소방공제 회관', '가락시장역 2번출구'];
+const PIONEER_LIST = [
+    '강성부', '강혜자', '곽종운', '길정숙', '김도윤', '김복희', '김서희', '김수경', '김수정', '김순애',
+    '김순자', '김연화', '김용훈', '김유진', '김인양', '김재만', '김진아', '김현숙', '김현철', '김화순',
+    '남승애', '민숙현', '박영심', '박정윤', '박준서', '박혜미', '박화자', '배복희', '서태진', '선동준',
+    '선상협', '성명숙', '신서우', '신옥', '신옥순', '신희성', '아지나', '양은', '엄연화', '우혜민',
+    '유은진', '유을숙', '유찬희', '윤영희', '윤종배', '이경남', '이내학', '이명옥', '이봉수', '이삼순',
+    '이성신', '이양순', '이영재', '이온유', '이일석', '이정훈', '이종언', '이주연', '이창호', '임미성',
+    '임승국', '장다은', '장병선', '전영수', '전영철', '전용순', '정재철', '정현숙', '제성애', '조경록',
+    '조경호', '주혜선', '최갑순', '최기선', '최기연', '최미옥', '최은선', '최재원', '최현선', '최혜경',
+    '하수진', '한미숙', '한미자', '허영원', '홍선자'
+];
+
+// --- DOM 요소 참조 ---
+const mainContainer = document.querySelector('.main-container');
+const headerTitle = document.querySelector('header h1');
+const accordionContent = document.getElementById('accordionContent');
+const accordionToggle = document.getElementById('accordionToggle');
+const totalTeamsInput = document.getElementById('totalTeams');
+const timeDisplay = document.getElementById('timeDisplay');
+const pointTabsContainer = document.getElementById('pointTabs');
+const addPointBtn = document.getElementById('addPointBtn');
+const newPointNameInput = document.getElementById('newPointName');
+const participantNameInput = document.getElementById('participantName');
+const addParticipantBtn = document.getElementById('addParticipantBtn');
+const participantListContainer = document.getElementById('participantList');
+const copyResultsBtn = document.getElementById('copyResultsBtn');
+const clearAllBtn = document.getElementById('clearAllBtn');
+
+// Modal DOMs
+const showPioneerListBtn = document.getElementById('showPioneerListBtn');
+const pioneerModal = document.getElementById('pioneerModal');
+const pioneerModalCloseBtn = pioneerModal.querySelector('.modal-close-btn');
+const pioneerListContainer = document.getElementById('pioneerListContainer');
+const pioneerSearchInput = document.getElementById('pioneerSearchInput');
+const selectAllPioneersBtn = document.getElementById('selectAllPioneersBtn');
+const deselectAllPioneersBtn = document.getElementById('deselectAllPioneersBtn');
+const addSelectedPioneersBtn = document.getElementById('addSelectedPioneersBtn');
+const copyFallbackModal = document.getElementById('copyFallbackModal');
+const copyFallbackModalCloseBtn = copyFallbackModal.querySelector('.modal-close-btn');
+const copyFallbackText = document.getElementById('copyFallbackText');
+
+
+// --- 핵심 기능 ---
+
+/**
+ * 0. 아코디언 기능
+ */
+function setupAccordion() {
+    headerTitle.addEventListener('click', () => {
+        const isCollapsed = accordionContent.classList.toggle('collapsed');
+        accordionToggle.textContent = isCollapsed ? '▶' : '▼';
+    });
+}
+
+/**
+ * 1. 데이터 저장 및 로드
+ */
+function saveState() {
+    localStorage.setItem('participants_v2', JSON.stringify(participants));
+    localStorage.setItem('points_v2', JSON.stringify(points));
+    localStorage.setItem('totalTeams_v2', totalTeamsInput.value);
+}
+
+function loadState() {
+    const loadedParticipants = localStorage.getItem('participants_v2');
+    participants = loadedParticipants ? JSON.parse(loadedParticipants) : [];
+
+    // 이전 'time' 기반 데이터 구조를 'timeIndex'로 마이그레이션
+    const totalTeams = parseInt(localStorage.getItem('totalTeams_v2') || '4');
+    const timeIncrement = TOTAL_TIME_MINUTES / totalTeams;
+    participants.forEach(p => {
+        if (p.assignment && typeof p.assignment.time !== 'undefined') {
+            p.assignment.timeIndex = Math.round(p.assignment.time / timeIncrement);
+            delete p.assignment.time;
+        }
+    });
+
+
+    const loadedPoints = localStorage.getItem('points_v2');
+    points = loadedPoints ? JSON.parse(loadedPoints) : [...DEFAULT_POINTS];
+
+    const loadedTeams = localStorage.getItem('totalTeams_v2');
+    totalTeamsInput.value = (loadedTeams && ['2', '3', '4', '5', '6'].includes(loadedTeams)) ? loadedTeams : '4';
+}
+
+/**
+ * 2. UI 렌더링
+ */
+function renderAll() {
+    renderPointTabs();
+    renderParticipantList();
+}
+
+function renderPointTabs() {
+    pointTabsContainer.innerHTML = '';
+    const allTabs = ['전체 명단', ...points];
+
+    allTabs.forEach(tabName => {
+        const tab = document.createElement('div');
+        tab.className = 'tab-button';
+        tab.textContent = tabName;
+        tab.dataset.point = tabName;
+
+        if (activeTab === tabName) {
+            tab.classList.add('active');
+        }
+
+        tab.addEventListener('click', () => {
+            // '전체 명단' 탭으로 이동 시 선택 모드 완전 초기화
+            if (tabName === '전체 명단') {
+                exitPlacementMode();
+            } else {
+                // 포인트 탭 간 이동 시 슬롯만 초기화 (참여자 선택 유지)
+                selectedSlot = null;
+            }
+            activeTab = tabName;
+            renderAll();
+        });
+        pointTabsContainer.appendChild(tab);
+    });
+}
+
+function renderParticipantList() {
+    participantListContainer.innerHTML = '';
+    mainContainer.classList.toggle('placement-mode-active', selectedParticipantName !== null || selectedSlot !== null);
+
+    if (activeTab === '전체 명단') {
+        renderRosterView();
+    } else {
+        renderPointView();
+    }
+}
+
+function renderRosterView() {
+    const title = document.createElement('h3');
+    title.textContent = `전체 참여자 명단 (${participants.length}명)`;
+    participantListContainer.appendChild(title);
+
+    if (participants.length === 0) {
+        participantListContainer.innerHTML += '<p>등록된 참여자가 없습니다.</p>';
+        return;
+    }
+
+    const sortedParticipants = [...participants].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+    const rosterCardsWrapper = document.createElement('div');
+    rosterCardsWrapper.className = 'roster-cards-wrapper'; // New wrapper for roster cards
+
+    sortedParticipants.forEach(p => {
+        const card = createParticipantCard(p, { showAssignment: true });
+        rosterCardsWrapper.appendChild(card);
+    });
+    participantListContainer.appendChild(rosterCardsWrapper);
+}
+
+function renderPointView() {
+    const placementSection = document.createElement('div');
+    placementSection.className = 'placement-section';
+    
+    // const title = document.createElement('h3'); // 사용자 요청에 따라 제거됨
+    // title.textContent = `${activeTab} 배치 현황`; // 사용자 요청에 따라 제거됨
+    // placementSection.appendChild(title); // 사용자 요청에 따라 제거됨
+
+    const grid = document.createElement('div');
+    grid.className = 'time-slot-grid';
+    
+    grid.appendChild(document.createElement('div'));
+    for (let i = 1; i <= 3; i++) {
+        const header = document.createElement('div');
+        header.className = 'team-member-header';
+        // header.textContent = `팀원 ${i}`; // 사용자 요청에 따라 제거됨
+        grid.appendChild(header);
+    }
+
+    const totalTeams = parseInt(totalTeamsInput.value);
+    const timeIncrement = TOTAL_TIME_MINUTES / totalTeams;
+
+    for (let i = 0; i < totalTeams; i++) {
+        const time = i * timeIncrement;
+        
+        const timeLabel = document.createElement('div');
+        timeLabel.className = 'time-slot-label';
+        timeLabel.textContent = `${time}분`;
+        grid.appendChild(timeLabel);
+
+        for (let j = 0; j < 3; j++) {
+            const slot = document.createElement('div');
+            slot.className = 'participant-slot';
+            slot.dataset.point = activeTab;
+            slot.dataset.timeIndex = i;
+            slot.dataset.position = j;
+
+            const assignedParticipant = participants.find(p =>
+                p.assignment &&
+                p.assignment.point === activeTab &&
+                p.assignment.timeIndex === i &&
+                p.assignment.position === j
+            );
+
+            if (assignedParticipant) {
+                const card = createParticipantCard(assignedParticipant);
+                slot.appendChild(card);
+            } else {
+                // 선택된 슬롯이면 selected 클래스 추가
+                if (selectedSlot &&
+                    selectedSlot.point === activeTab &&
+                    selectedSlot.timeIndex === i &&
+                    selectedSlot.position === j) {
+                    slot.classList.add('selected');
+                }
+                slot.addEventListener('click', handleSlotClick);
+            }
+            grid.appendChild(slot);
+        }
+    }
+    placementSection.appendChild(grid);
+    participantListContainer.appendChild(placementSection);
+
+    const unassignedContainer = document.createElement('div');
+    unassignedContainer.className = 'unassigned-section'; // New class for the section
+    
+    const unassignedTitle = document.createElement('h3');
+    unassignedTitle.textContent = '미배치 인원';
+    unassignedContainer.appendChild(unassignedTitle);
+
+    const unassignedCardsWrapper = document.createElement('div');
+    unassignedCardsWrapper.className = 'unassigned-cards-wrapper'; // New wrapper for cards
+    unassignedCardsWrapper.id = 'unassigned-list-container'; // Keep ID for event listener
+    
+    const unassignedParticipants = participants
+        .filter(p => p.assignment === null)
+        .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+    if (unassignedParticipants.length > 0) {
+        unassignedParticipants.forEach(p => {
+            const card = createParticipantCard(p);
+            unassignedCardsWrapper.appendChild(card);
+        });
+    } else {
+        unassignedCardsWrapper.innerHTML += '<p>미배치 인원이 없습니다.</p>';
+    }
+    unassignedContainer.addEventListener('click', handleUnassignedListClick);
+    unassignedContainer.appendChild(unassignedCardsWrapper);
+    participantListContainer.appendChild(unassignedContainer);
+}
+
+function createParticipantCard(participant, options = {}) {
+    const card = document.createElement('div');
+    card.className = 'participant-card';
+    card.dataset.name = participant.name;
+    if (participant.name === selectedParticipantName) {
+        card.classList.add('selected');
+    }
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = participant.name;
+    card.appendChild(nameSpan);
+
+    if (options.showAssignment && participant.assignment) {
+        const { point, timeIndex, position } = participant.assignment;
+        const totalTeams = parseInt(totalTeamsInput.value);
+        const timeIncrement = TOTAL_TIME_MINUTES / totalTeams;
+        const displayTime = timeIndex * timeIncrement;
+        
+        const assignmentSpan = document.createElement('span');
+        assignmentSpan.className = 'assignment-info';
+        assignmentSpan.textContent = `(${point} / ${displayTime}분)`;
+        card.appendChild(assignmentSpan);
+    }
+
+    if (!participant.assignment || options.showAssignment) {
+        const deleteBtn = document.createElement('span');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '×';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm(`'${participant.name}' 님을 목록에서 삭제하시겠습니까?`)) {
+                deleteParticipant(participant.name);
+            }
+        });
+        card.appendChild(deleteBtn);
+    }
+
+    card.addEventListener('click', () => {
+        handleCardClick(participant.name);
+    });
+
+    return card;
+}
+
+/**
+ * 3. 참여자 및 포인트 관리
+ */
+function addParticipant() {
+    const name = participantNameInput.value.trim();
+    if (!name) {
+        alert('참여자 이름을 입력해주세요.');
+        return;
+    }
+    if (participants.some(p => p.name === name)) {
+        alert('이미 존재하는 참여자 이름입니다.');
+        return;
+    }
+    participants.push({ name: name, assignment: null });
+    participantNameInput.value = '';
+    saveState();
+    renderAll();
+}
+
+function deleteParticipant(participantName) {
+    if (selectedParticipantName === participantName) {
+        exitPlacementMode();
+    }
+    participants = participants.filter(p => p.name !== participantName);
+    saveState();
+    renderAll();
+}
+
+function addPoint() {
+    const newPointName = newPointNameInput.value.trim();
+    if (!newPointName) {
+        alert('포인트 이름을 입력해주세요.');
+        return;
+    }
+    if (points.includes(newPointName) || newPointName === '전체 명단') {
+        alert('이미 존재하거나 사용할 수 없는 이름입니다.');
+        return;
+    }
+    points.push(newPointName);
+    newPointNameInput.value = '';
+    activeTab = newPointName;
+    saveState();
+    renderAll();
+}
+
+/**
+ * 4. 배치 기능 (Placement Mode)
+ */
+function enterPlacementMode(participantName) {
+    selectedParticipantName = participantName;
+    renderAll();
+}
+
+function exitPlacementMode() {
+    selectedParticipantName = null;
+    selectedSlot = null;
+    renderAll();
+}
+
+function handleCardClick(participantName) {
+    // 선택된 슬롯이 있으면 해당 참여자를 그 슬롯에 배치
+    if (selectedSlot) {
+        const participant = participants.find(p => p.name === participantName);
+        if (!participant) return;
+
+        participant.assignment = {
+            point: selectedSlot.point,
+            timeIndex: selectedSlot.timeIndex,
+            position: selectedSlot.position
+        };
+
+        saveState();
+        exitPlacementMode();
+    } else if (!selectedParticipantName) {
+        enterPlacementMode(participantName);
+    } else {
+        const participantA = participants.find(p => p.name === selectedParticipantName);
+        const participantB = participants.find(p => p.name === participantName);
+
+        if (participantA === participantB) {
+            exitPlacementMode();
+        } else {
+            const tempAssignment = participantA.assignment;
+            participantA.assignment = participantB.assignment;
+            participantB.assignment = tempAssignment;
+
+            saveState();
+            exitPlacementMode();
+        }
+    }
+}
+
+function handleSlotClick(event) {
+    const { point, timeIndex, position } = event.currentTarget.dataset;
+
+    // 선택된 참여자가 있으면 해당 슬롯에 배치
+    if (selectedParticipantName) {
+        const selectedParticipant = participants.find(p => p.name === selectedParticipantName);
+        if (!selectedParticipant) return;
+
+        selectedParticipant.assignment = {
+            point: point,
+            timeIndex: parseInt(timeIndex),
+            position: parseInt(position)
+        };
+
+        saveState();
+        exitPlacementMode();
+    } else {
+        // 이미 선택된 슬롯을 다시 클릭하면 선택 취소
+        if (selectedSlot &&
+            selectedSlot.point === point &&
+            selectedSlot.timeIndex === parseInt(timeIndex) &&
+            selectedSlot.position === parseInt(position)) {
+            exitPlacementMode();
+        } else {
+            // 선택된 참여자가 없으면 슬롯 선택 모드로 진입
+            selectedSlot = {
+                point: point,
+                timeIndex: parseInt(timeIndex),
+                position: parseInt(position)
+            };
+            renderAll();
+        }
+    }
+}
+
+function handleUnassignedListClick() {
+    // 슬롯이 선택된 경우에는 동작하지 않음 (빈칸->이름 모드에서는 해제 불필요)
+    if (selectedSlot) {
+        return;
+    }
+
+    if (!selectedParticipantName) return;
+
+    const selectedParticipant = participants.find(p => p.name === selectedParticipantName);
+    if (selectedParticipant && selectedParticipant.assignment) {
+        selectedParticipant.assignment = null;
+        saveState();
+        exitPlacementMode();
+    }
+}
+
+/**
+ * 5. 모달 기능
+ */
+function renderPioneerListModal() {
+    pioneerListContainer.innerHTML = '';
+    const existingNames = participants.map(p => p.name);
+
+    PIONEER_LIST.forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'pioneer-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `pioneer-${name}`;
+        checkbox.value = name;
+
+        const label = document.createElement('label');
+        label.htmlFor = `pioneer-${name}`;
+        label.textContent = name;
+
+        if (existingNames.includes(name)) {
+            checkbox.checked = true;
+        }
+
+        // 체크박스 변경 시 즉시 적용
+        checkbox.addEventListener('change', (e) => {
+            const pioneerName = e.target.value;
+            const isChecked = e.target.checked;
+
+            if (isChecked) {
+                // 체크된 경우: 참여자 추가
+                if (!participants.some(p => p.name === pioneerName)) {
+                    participants.push({ name: pioneerName, assignment: null });
+                    saveState();
+                    renderAll();
+                }
+            } else {
+                // 체크 해제된 경우: 참여자 삭제
+                const participant = participants.find(p => p.name === pioneerName);
+                if (participant) {
+                    if (!participant.assignment) {
+                        participants = participants.filter(p => p.name !== pioneerName);
+                        saveState();
+                        renderAll();
+                    } else {
+                        // 배치된 경우 체크 해제 불가
+                        e.target.checked = true;
+                        alert(`'${pioneerName}' 님은 이미 배치되어 있어 삭제할 수 없습니다. 배치를 먼저 해제해주세요.`);
+                    }
+                }
+            }
+        });
+
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        pioneerListContainer.appendChild(item);
+    });
+}
+
+// 한글 초성 추출 함수
+function getChosung(str) {
+    const CHOSUNG_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+    let result = '';
+
+    for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        const code = char.charCodeAt(0);
+
+        // 한글 유니코드 범위 (가 = 0xAC00, 힣 = 0xD7A3)
+        if (code >= 0xAC00 && code <= 0xD7A3) {
+            const chosungIndex = Math.floor((code - 0xAC00) / 588);
+            result += CHOSUNG_LIST[chosungIndex];
+        } else {
+            result += char;
+        }
+    }
+
+    return result;
+}
+
+// 초성인지 확인하는 함수
+function isChosung(str) {
+    const CHOSUNG_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+    return Array.from(str).every(char => CHOSUNG_LIST.includes(char));
+}
+
+function filterPioneerList() {
+    const searchTerm = pioneerSearchInput.value.trim();
+    const items = pioneerListContainer.querySelectorAll('.pioneer-item');
+
+    if (!searchTerm) {
+        // 검색어가 없으면 모두 표시
+        items.forEach(item => {
+            item.style.display = 'block';
+        });
+        return;
+    }
+
+    const isChosungSearch = isChosung(searchTerm);
+
+    items.forEach(item => {
+        const label = item.querySelector('label');
+        const name = label.textContent;
+        let isMatch = false;
+
+        if (isChosungSearch) {
+            // 초성 검색
+            const nameChosung = getChosung(name);
+            isMatch = nameChosung.includes(searchTerm);
+        } else {
+            // 일반 검색 (대소문자 무시)
+            isMatch = name.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+
+        item.style.display = isMatch ? 'block' : 'none';
+    });
+}
+
+function openPioneerModal() {
+    renderPioneerListModal();
+    pioneerSearchInput.value = ''; // 검색 입력 필드 초기화
+    pioneerModal.classList.remove('hidden');
+    pioneerSearchInput.focus(); // 검색 필드에 포커스
+}
+
+function closePioneerModal() {
+    pioneerModal.classList.add('hidden');
+}
+
+function closeCopyFallbackModal() {
+    copyFallbackModal.classList.add('hidden');
+}
+
+/**
+ * 6. 유틸리티
+ */
+function calculateDisplayTime() {
+    const totalTeams = parseInt(totalTeamsInput.value);
+    const timePerTeam = (TOTAL_TIME_MINUTES / totalTeams).toFixed(0);
+    timeDisplay.textContent = `팀별 봉사 시간: ${timePerTeam}분`;
+}
+
+function copyResultsToClipboard() {
+    let resultText = `일요일 전시대봉사 일정\n`;
+    const totalTeams = parseInt(totalTeamsInput.value);
+    const timeIncrement = TOTAL_TIME_MINUTES / totalTeams;
+
+    points.forEach(point => {
+        let pointText = ""; // 임시로 포인트별 텍스트를 저장
+        let pointHasAssignments = false;
+
+        for (let i = 0; i < totalTeams; i++) {
+            const time = i * timeIncrement;
+            
+            const teamNames = participants
+                .filter(p =>
+                    p.assignment &&
+                    p.assignment.point === point &&
+                    p.assignment.timeIndex === i
+                )
+                .sort((a, b) => a.assignment.position - b.assignment.position) // 팀원 순서대로 정렬
+                .map(p => p.name);
+
+            if (teamNames.length > 0) {
+                pointHasAssignments = true;
+                pointText += `${String(time).padStart(2, '0')}분: ${teamNames.join(', ')}\n`;
+            }
+        }
+
+        if (pointHasAssignments) {
+            resultText += `\n[ ${point} ]\n`;
+            resultText += pointText;
+        }
+    });
+
+    // 항상 텍스트를 폴백 모달에 표시
+    copyFallbackText.textContent = resultText;
+    copyFallbackModal.classList.remove('hidden');
+}
+
+function clearAllData() {
+    if (confirm('경고: 모든 참여자, 포인트, 설정 데이터가 삭제됩니다. 계속하시겠습니까?')) {
+        localStorage.removeItem('participants_v2');
+        localStorage.removeItem('points_v2');
+        localStorage.removeItem('totalTeams_v2');
+        
+        participants = [];
+        points = [...DEFAULT_POINTS];
+        activeTab = '전체 명단';
+        
+        totalTeamsInput.value = '4';
+        
+        calculateDisplayTime();
+        renderAll();
+        alert('모든 데이터가 초기화되었습니다.');
+    }
+}
+
+/**
+ * 7. 이벤트 리스너 설정
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    setupAccordion();
+    loadState();
+    calculateDisplayTime();
+    renderAll();
+
+    totalTeamsInput.addEventListener('change', () => {
+        const newTotalTeams = parseInt(totalTeamsInput.value);
+        participants.forEach(p => {
+            if (p.assignment && p.assignment.timeIndex >= newTotalTeams) {
+                p.assignment = null;
+            }
+        });
+        calculateDisplayTime();
+        renderAll();
+    });
+    
+    addPointBtn.addEventListener('click', addPoint);
+    addParticipantBtn.addEventListener('click', addParticipant);
+    participantNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addParticipant();
+    });
+    copyResultsBtn.addEventListener('click', copyResultsToClipboard);
+    clearAllBtn.addEventListener('click', clearAllData);
+
+    // Modal listeners
+    showPioneerListBtn.addEventListener('click', openPioneerModal);
+    pioneerModalCloseBtn.addEventListener('click', closePioneerModal);
+    pioneerModal.addEventListener('click', (e) => {
+        if (e.target === pioneerModal) {
+            closePioneerModal();
+        }
+    });
+    pioneerSearchInput.addEventListener('input', filterPioneerList);
+    selectAllPioneersBtn.addEventListener('click', () => {
+        pioneerListContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if (!cb.checked) {
+                cb.checked = true;
+                cb.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+    deselectAllPioneersBtn.addEventListener('click', () => {
+        pioneerListContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if (cb.checked) {
+                cb.checked = false;
+                cb.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+    addSelectedPioneersBtn.addEventListener('click', () => {
+        closePioneerModal();
+    });
+
+    copyFallbackModalCloseBtn.addEventListener('click', closeCopyFallbackModal);
+    copyFallbackModal.addEventListener('click', (e) => {
+        if (e.target === copyFallbackModal) {
+            closeCopyFallbackModal();
+        }
+    });
+
+    document.getElementById('selectAllTextBtn').addEventListener('click', () => {
+        const textToSelect = document.getElementById('copyFallbackText');
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(textToSelect);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (selectedParticipantName) {
+                exitPlacementMode();
+            }
+            if (!pioneerModal.classList.contains('hidden')) {
+                closePioneerModal();
+            }
+            if (!copyFallbackModal.classList.contains('hidden')) {
+                closeCopyFallbackModal();
+            }
+        }
+    });
+    window.addEventListener('beforeunload', saveState);
+});
+</script>
+</body>
+</html>
