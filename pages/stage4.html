@@ -5,6 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>인지 테스트 - 4단계</title>
     <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* 4단계 전용 스타일 */
+        .stage-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .message {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        /* 아날로그 시계 스타일 */
+        .clock {
+            width: 250px;
+            height: 250px;
+            border: 8px solid white;
+            border-radius: 50%;
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 20px;
+        }
+
+        .clock-face {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .clock-number {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            line-height: 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            transform: translate(-50%, -50%);
+        }
+
+        .hand {
+            width: 50%;
+            height: 6px;
+            background: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: 0% 50%;
+            transform: rotate(90deg); 
+            transition: all 0.05s;
+            transition-timing-function: cubic-bezier(0.1, 2.7, 0.58, 1);
+            border-radius: 3px;
+        }
+
+        /* 시침은 좀 더 짧고 두껍게, 분침은 길고 얇게 */
+        .hour-hand {
+            width: 30%;
+            left: 50%; 
+            background: #ffcc00; /* 시침 구분 */
+            height: 8px;
+            z-index: 3;
+        }
+
+        .min-hand {
+            width: 40%;
+            left: 50%;
+            background: white;
+            height: 4px;
+            z-index: 2;
+        }
+        
+        /* 시계 중심점 */
+        .clock-center {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 4;
+        }
+
+        /* 산수 문제 보기 스타일 */
+        .math-options {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .math-option {
+            width: 80px;
+            height: 80px;
+            background-color: #4a90e2; /* 파란색 배경 */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            border: 2px solid white;
+            transition: transform 0.2s;
+        }
+
+        .math-option:hover {
+            transform: scale(1.1);
+            background-color: #357abd;
+        }
+
+        /* 시계 선택 그리드 */
+        .clock-grid {
+            display: flex;
+            gap: 40px;
+        }
+        
+        .clock-item {
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .clock-item:hover {
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
 
@@ -14,16 +155,199 @@
             <span>4단계 테스트</span>
         </header>
 
-        <main>
-            <p class="instruction">이곳은 4단계 테스트 화면입니다.<br>복합적인 인지 능력을 테스트합니다.</p>
-            <div class="game-area">
-                <span>4단계 콘텐츠 영역</span>
+        <main style="padding: 0;">
+            <!-- Phase 1: Memorize -->
+            <div id="phase-memorize" class="stage-container">
+                <div class="message">아래 시각을 기억하세요! (<span id="timer">5</span>초)</div>
+                <div id="target-clock-display"></div> <!-- JS로 시계 생성 -->
+            </div>
+
+            <!-- Phase 2: Math -->
+            <div id="phase-math" class="stage-container hidden">
+                <div class="message" id="math-problem">문제</div>
+                <div class="math-options" id="math-options"></div>
+            </div>
+
+            <!-- Phase 3: Recall -->
+            <div id="phase-recall" class="stage-container hidden">
+                <div class="message">아까 본 시각과 같은 시계를 고르세요.</div>
+                <div class="clock-grid" id="clock-options"></div>
             </div>
         </main>
     </div>
 
     <script>
-        console.log("Stage 4 Loaded");
+        // 전역 변수
+        let targetHour, targetMinute;
+        let mathAnswer;
+        let timeLeft = 5;
+
+        // 시계 생성 헬퍼 함수
+        function createClockElement(hour, minute, size = 250) {
+            const clock = document.createElement('div');
+            clock.className = 'clock';
+            clock.style.width = size + 'px';
+            clock.style.height = size + 'px';
+
+            const face = document.createElement('div');
+            face.className = 'clock-face';
+
+            // 숫자 배치
+            const radius = size / 2;
+            const numberRadius = radius * 0.8; // 테두리 안쪽으로 배치
+            for (let i = 1; i <= 12; i++) {
+                const numEl = document.createElement('div');
+                numEl.className = 'clock-number';
+                numEl.textContent = i;
+                
+                // 각도 계산 (12시는 270도 혹은 -90도 위치)
+                const angle = (i * 30 - 90) * (Math.PI / 180);
+                const x = radius + numberRadius * Math.cos(angle);
+                const y = radius + numberRadius * Math.sin(angle);
+                
+                numEl.style.left = `${x}px`;
+                numEl.style.top = `${y}px`;
+                numEl.style.fontSize = `${size / 200}rem`; // 사이즈에 따른 폰트 크기 조절
+                face.appendChild(numEl);
+            }
+
+            const center = document.createElement('div');
+            center.className = 'clock-center';
+
+            // 시침 각도: (시 * 30) + (분 * 0.5) - 90
+            const hourDeg = ((hour % 12) * 30) + (minute * 0.5) - 90;
+            const minDeg = (minute * 6) - 90;
+
+            const hourHand = document.createElement('div');
+            hourHand.className = 'hand hour-hand';
+            hourHand.style.transform = `rotate(${hourDeg}deg)`;
+            hourHand.style.width = `${size * 0.3}px`; // 사이즈 비례
+            hourHand.style.height = `${size * 0.03}px`;
+
+            const minHand = document.createElement('div');
+            minHand.className = 'hand min-hand';
+            minHand.style.transform = `rotate(${minDeg}deg)`;
+            minHand.style.width = `${size * 0.4}px`; // 사이즈 비례
+            minHand.style.height = `${size * 0.015}px`;
+
+            face.appendChild(hourHand);
+            face.appendChild(minHand);
+            face.appendChild(center);
+            clock.appendChild(face);
+
+            return clock;
+        }
+
+        function initStage() {
+            // 1. 랜덤 시각 생성 (1시 ~ 12시, 0분 ~ 55분 5분 단위)
+            targetHour = Math.floor(Math.random() * 12) + 1;
+            targetMinute = Math.floor(Math.random() * 12) * 5;
+
+            // Phase 1 화면 구성
+            const targetDisplay = document.getElementById('target-clock-display');
+            targetDisplay.innerHTML = '';
+            targetDisplay.appendChild(createClockElement(targetHour, targetMinute));
+
+            // 타이머 시작
+            const timerEl = document.getElementById('timer');
+            const interval = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    startMathPhase();
+                }
+            }, 1000);
+        }
+
+        function startMathPhase() {
+            document.getElementById('phase-memorize').classList.add('hidden');
+            document.getElementById('phase-math').classList.remove('hidden');
+
+            // 간단한 덧셈 문제 생성 (결과가 1~9 사이)
+            const a = Math.floor(Math.random() * 5) + 1; // 1~5
+            const b = Math.floor(Math.random() * 4);     // 0~3
+            mathAnswer = a + b;
+
+            document.getElementById('math-problem').textContent = `${a} + ${b} = [ ? ]`;
+
+            // 보기 생성 (정답 1개 + 오답 2개)
+            const options = [mathAnswer];
+            while (options.length < 3) {
+                const wrong = Math.floor(Math.random() * 9) + 1;
+                if (!options.includes(wrong)) options.push(wrong);
+            }
+            // 섞기
+            options.sort(() => Math.random() - 0.5);
+
+            const optionsContainer = document.getElementById('math-options');
+            optionsContainer.innerHTML = '';
+            
+            options.forEach(num => {
+                const btn = document.createElement('div');
+                btn.className = 'math-option';
+                btn.textContent = num;
+                btn.onclick = () => {
+                    if (num === mathAnswer) {
+                        startRecallPhase();
+                    } else {
+                        // 오답 시 피드백 (간단히 흔들림 또는 경고)
+                        alert("틀렸습니다. 다시 계산해보세요.");
+                    }
+                };
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function startRecallPhase() {
+            document.getElementById('phase-math').classList.add('hidden');
+            document.getElementById('phase-recall').classList.remove('hidden');
+
+            const clockContainer = document.getElementById('clock-options');
+            clockContainer.innerHTML = '';
+
+            // 정답 시각 + 오답 시각 2개 생성
+            // 오답 시각은 정답과 다르게 생성
+            const wrongClocks = [];
+            while (wrongClocks.length < 2) {
+                const h = Math.floor(Math.random() * 12) + 1;
+                const m = Math.floor(Math.random() * 12) * 5;
+                if (h !== targetHour || m !== targetMinute) {
+                    // 중복 체크
+                    const isDup = wrongClocks.some(c => c.h === h && c.m === m);
+                    if (!isDup) wrongClocks.push({ h, m });
+                }
+            }
+
+            // 배열 합치고 섞기
+            const choices = [
+                { h: targetHour, m: targetMinute, isCorrect: true },
+                { h: wrongClocks[0].h, m: wrongClocks[0].m, isCorrect: false },
+                { h: wrongClocks[1].h, m: wrongClocks[1].m, isCorrect: false }
+            ];
+            choices.sort(() => Math.random() - 0.5);
+
+            choices.forEach(choice => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'clock-item';
+                
+                const clockEl = createClockElement(choice.h, choice.m, 150); // 선택지는 조금 작게
+                wrapper.appendChild(clockEl);
+
+                wrapper.onclick = () => {
+                    if (choice.isCorrect) {
+                        alert("4단계 성공! 축하합니다.");
+                        // location.href = 'stage5.html';
+                    } else {
+                        alert("틀렸습니다. 다시 기억해보세요.");
+                    }
+                };
+                clockContainer.appendChild(wrapper);
+            });
+        }
+
+        window.onload = initStage;
+
     </script>
 </body>
 </html>
