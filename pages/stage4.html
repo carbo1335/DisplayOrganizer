@@ -42,14 +42,16 @@
 
         .clock-number {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            text-align: center;
-            line-height: 30px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-size: 1.2rem;
             font-weight: bold;
             color: white;
-            transform: translate(-50%, -50%);
+            /* 좌상단으로 더 이동시켜 균형을 맞춤 */
+            transform: translate(-70%, -70%);
         }
 
         .hand {
@@ -194,7 +196,7 @@
 
             // 숫자 배치
             const radius = size / 2;
-            const numberRadius = radius * 0.8; // 테두리 안쪽으로 배치
+            const numberRadius = radius * 0.72; // 테두리에서 더 안쪽으로 배치하여 가려짐 방지
             for (let i = 1; i <= 12; i++) {
                 const numEl = document.createElement('div');
                 numEl.className = 'clock-number';
